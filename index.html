@@ -9,6 +9,9 @@
     <!-- Favicon (SVG Data-URI to prevent 404 requests) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><ellipse cx='12' cy='5' rx='9' ry='3'></ellipse><path d='M21 12c0 1.66-4 3-9 3s-9-1.34-9-3'></path><path d='M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5'></path></svg>">
 
+    <!-- SEO Canonical -->
+    <link rel="canonical" href="https://dataforge-sql.pages.dev/">
+
     <!-- Open Graph & Twitter Cards -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="DataForge SQL: Streaming Client-Side CSV to SQL Converter">
@@ -200,11 +203,15 @@
             .ad-slot-sidebar { display: none; }
         }
 
+        /* Prevent Grid Blowout */
+        main { min-width: 0; }
+
         .panel {
             background-color: var(--bg-panel);
             border: 1px solid var(--border-color);
             border-radius: 0.75rem;
             padding: 1.5rem;
+            min-width: 0;
         }
 
         .form-group {
@@ -278,7 +285,6 @@
             border-radius: 0.5rem;
             font-size: 0.875rem;
         }
-        .b2b-card h4 { color: var(--accent); margin-bottom: 0.25rem; }
         .b2b-card a { color: var(--accent); text-decoration: none; font-weight: 600; }
         .b2b-card a:hover { text-decoration: underline; }
 
@@ -352,6 +358,9 @@
             border: 1px solid var(--border-color);
             border-radius: 0.5rem;
             overflow: hidden;
+            min-width: 0;
+            width: 100%;
+            max-width: 100%;
         }
         .console-header {
             background-color: #0f172a;
@@ -373,13 +382,15 @@
             font-size: 0.875rem;
             color: #a5b4fc;
             background-color: var(--bg-dark);
+            width: 100%;
+            max-width: 100%;
         }
         .console-table { display: table; width: 100%; border-spacing: 0; }
         .console-line { display: table-row; }
         .console-line-num {
             display: table-cell;
             padding: 0.25rem 1rem;
-            color: #64748b;
+            color: #94a3b8; /* WCAG AA Contrast over #0f172a */
             text-align: right;
             user-select: none;
             border-right: 1px solid #334155;
@@ -401,8 +412,8 @@
             margin: 4rem auto;
             padding: 0 1rem;
         }
-        article h1 { font-size: 2rem; margin-bottom: 1.5rem; color: #fff; line-height: 1.3; }
-        article h2 { font-size: 1.5rem; margin-top: 2.5rem; margin-bottom: 1rem; color: #e2e8f0; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;}
+        article h2 { font-size: 2rem; margin-bottom: 1.5rem; color: #fff; line-height: 1.3; } /* Replaces old h1 */
+        article h2.section-title { font-size: 1.5rem; margin-top: 2.5rem; margin-bottom: 1rem; color: #e2e8f0; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;}
         article h3 { font-size: 1.25rem; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #cbd5e1; }
         article p { margin-bottom: 1rem; color: var(--text-muted); text-align: justify; }
         article ul { margin-left: 1.5rem; margin-bottom: 1rem; color: var(--text-muted); }
@@ -476,13 +487,13 @@
                 <div class="form-group">
                     <label for="batchSize">Batch Size (Rows per INSERT)</label>
                     <input type="number" id="batchSize" value="5000" min="1">
-                    <small id="batchWarn" style="color: var(--danger); font-size: 0.75rem; display: none;">SQL Server limits batches to 1,000 rows.</small>
+                    <small id="batchWarn" style="color: #f87171; font-size: 0.75rem; display: none;">SQL Server limits batches to 1,000 rows.</small>
                 </div>
 
                 <div class="switch-container">
                     <span class="switch-label">Include CREATE TABLE</span>
                     <label class="switch">
-                        <input type="checkbox" id="includeDDL" checked>
+                        <input type="checkbox" id="includeDDL" checked aria-label="Include CREATE TABLE statement">
                         <span class="slider"></span>
                     </label>
                 </div>
@@ -490,14 +501,14 @@
                 <div class="switch-container">
                     <span class="switch-label">Empty Strings as NULL</span>
                     <label class="switch">
-                        <input type="checkbox" id="emptyAsNull" checked>
+                        <input type="checkbox" id="emptyAsNull" checked aria-label="Treat empty strings as NULL">
                         <span class="slider"></span>
                     </label>
                 </div>
 
                 <div class="b2b-card" id="b2bCard">
-                    <h4>Recommended for PostgreSQL</h4>
-                    <p>Deploy serverless Postgres with <a href="#" target="_blank" rel="nofollow">Neon</a> or build faster with <a href="#" target="_blank" rel="nofollow">Supabase</a>.</p>
+                    <p style="font-weight:600; color:var(--accent);">Recommended for PostgreSQL</p>
+                    <p>Deploy serverless Postgres with <a href="https://neon.tech" target="_blank" rel="noopener noreferrer">Neon</a> or build faster with <a href="https://supabase.com" target="_blank" rel="noopener noreferrer">Supabase</a>.</p>
                 </div>
             </div>
 
@@ -515,10 +526,10 @@
                         <polyline points="17 8 12 3 7 8"></polyline>
                         <line x1="12" y1="3" x2="12" y2="15"></line>
                     </svg>
-                    <h3 style="margin-bottom: 0.5rem;">Drag & Drop your CSV/TSV file</h3>
+                    <h2 style="font-size:1.25rem; margin-bottom:0.5rem;">Drag & Drop your CSV/TSV file</h2>
                     <p>or click to browse from your local device.</p>
                     <button class="btn btn-outline" id="browseBtn">Select File</button>
-                    <input type="file" id="fileInput" accept=".csv, .tsv">
+                    <input type="file" id="fileInput" accept=".csv, .tsv" aria-label="Upload CSV or TSV file">
                 </div>
 
                 <div id="fileInfo" style="display: none; margin-bottom: 1.5rem; text-align: center;">
@@ -562,11 +573,11 @@
     </div>
 
     <article>
-        <h1>DataForge SQL: Streaming Client-Side CSV to SQL Converter</h1>
+        <h2>DataForge SQL: Streaming Client-Side CSV to SQL Converter</h2>
         <p>In the modern data engineering ecosystem, developers frequently face the challenge of migrating legacy data stored in flat files (such as CSV or TSV) into robust relational database management systems. While myriad online utilities exist, they universally suffer from critical flaws: severe file size limitations, network latency, and egregious privacy violations. DataForge SQL revolutionizes this workflow by introducing a 100% serverless, client-side streaming architecture that compiles raw text into standard SQL DML directly within the user's browser.</p>
         <p>By leveraging HTML5 Web Workers and the modern File System Access API, this tool processes multi-gigabyte datasets without ever touching a remote server. The inherent limitations of browser memory heaps—such as the aggressive iOS Jetsam process terminator—are circumvented by processing data in discrete 4MB chunks and streaming the byte outputs directly to the client's hard disk via Promise-based queues.</p>
 
-        <h2>Architecting High-Performance Bulk Data Ingestion</h2>
+        <h2 class="section-title">Architecting High-Performance Bulk Data Ingestion</h2>
         <p>Designing an application capable of parsing gigabytes of text without crashing the browser's UI thread or triggering out-of-memory exceptions requires surgical precision in memory management, garbage collection orchestration, and asynchronous concurrency.</p>
         
         <h3>Bulk Inserts vs. Individual Statements: Latency and Network Overhead</h3>
@@ -578,7 +589,7 @@
         <p>In PostgreSQL, if a transaction generates WAL records faster than the checkpoint process can write dirty pages to disk, the `max_wal_size` parameter is breached. This causes the database to throttle performance aggressively or fail the transaction entirely. Similarly, in SQL Server, a single massive bulk insert in the "Full Recovery Model" forces the `.ldf` file to undergo automatic file growth (Auto-Growth). Auto-growth events lock the entire database file on disk, halting all queries until the file expands. If the transaction rolls back due to a single malformed row, the rollback phase can freeze the server for hours.</p>
         <p>DataForge SQL mitigates these disasters by allowing database administrators to explicitly define batch size thresholds. By pacing the generated SQL into digestible, bounded transaction limits (e.g., 2,500 to 5,000 rows per block), developers can execute their ingestion scripts sequentially. This provides the database's background writer processes adequate breathing room to flush dirty pages, avoiding catastrophic file fragmentation and preserving overarching system stability.</p>
 
-        <h2>Cross-Engine Dialect Matrix: Syntax, Typing, and Quoting Standards</h2>
+        <h2 class="section-title">Cross-Engine Dialect Matrix: Syntax, Typing, and Quoting Standards</h2>
         <p>Relational databases are notoriously fragmented when it comes to lexical parsing. A SQL script that executes flawlessly in MySQL will almost certainly trigger fatal syntax exceptions in PostgreSQL or SQL Server. DataForge SQL incorporates a dialect-aware compilation engine that meticulously structures the output to satisfy engine-specific constraints.</p>
 
         <div style="overflow-x:auto;">
@@ -637,7 +648,7 @@
         <h3>SQLite: In-Memory Ingestion, Pragmas, and Variable Thresholds</h3>
         <p>As an embedded database, SQLite's capabilities vary wildly depending on compile-time limits (specifically <code>SQLITE_MAX_VARIABLE_NUMBER</code> and <code>SQLITE_MAX_COMPOUND_SELECT</code>). While recent versions allow up to 32,766 variables, legacy builds cap at 999. To maintain maximum backward compatibility, the dialect matrix applies double quotes for identifiers and maintains a conservative 1,000-row ceiling per batch. SQLite's dynamic, weakly-typed affinity system is highly permissive, but DataForge SQL still generates standardized strict DDL to facilitate proper schema normalization and cross-compatibility if the database is later migrated to a heavier engine.</p>
 
-        <h2>Automated Data Integrity: Type Inference and Widening Heuristics</h2>
+        <h2 class="section-title">Automated Data Integrity: Type Inference and Widening Heuristics</h2>
         <p>Generating a precise <code>CREATE TABLE</code> Data Definition Language (DDL) statement from a schema-less CSV requires advanced heuristic analysis. DataForge SQL employs a deterministic type inference engine that analyzes the first 1,000 rows of the dataset to assign optimal relational data types.</p>
 
         <h3>Disambiguating Numeric Precision, Floating Points, and Large Integers</h3>
@@ -648,7 +659,7 @@
         <p>In relational algebra, an empty string (<code>''</code>) is a definitive, allocated scalar value indicating a string of zero length, whereas <code>NULL</code> represents the absolute, definitive absence of data (an unknown state). Failing to differentiate between the two leads to catastrophic reporting errors in aggregate functions like <code>COUNT()</code> and <code>AVG()</code>. For numeric, boolean, and timestamp columns, DataForge SQL strictly enforces a rule where empty CSV cells are output as unquoted <code>NULL</code> literals.</p>
         <p>For textual data, the tool provides a UI-level toggle, allowing database administrators to dictate whether blank cells should be cast as <code>NULL</code> or preserved as <code>''</code> (empty strings), adhering to the specific tri-value logic requirements of their downstream business intelligence layer.</p>
 
-        <h2>Enterprise Security and Regulatory Compliance in Browser Processing</h2>
+        <h2 class="section-title">Enterprise Security and Regulatory Compliance in Browser Processing</h2>
         <p>In the era of stringent data privacy legislation, uploading proprietary corporate datasets, financial ledgers, or Personal Identifiable Information (PII) to anonymous third-party utility servers is an unacceptable security risk that violates internal audit policies.</p>
 
         <h3>HIPAA and GDPR Alignment: Zero-Network Ingestion via Local Web Workers</h3>
@@ -658,7 +669,7 @@
         <p>CSV files extracted from untrusted sources often contain executable spreadsheet formulas (CSV Injection) or malicious SQL payloads. If a user re-opens the processed dataset in Excel or Google Sheets, a cell beginning with <code>=</code>, <code>+</code>, <code>-</code>, or <code>@</code> can execute arbitrary commands on the OS or manipulate cell output (e.g., <code>=cmd|' /C calc'!A0</code>). The compiler scans for these prefix triggers, prepending an escape apostrophe to neutralize the executable threat.</p>
         <p>Furthermore, to prevent DDL injection via manipulated or carelessly formatted header rows, all column names are strictly deduplicated and sanitized. Any character that is not alphanumeric or an underscore is stripped via regex (<code>/^[a-zA-Z0-9_]+$/</code>). If two columns result in the identical sanitized name (e.g., <code>User ID</code> and <code>User-ID</code> becoming <code>UserID</code>), the compiler automatically applies incremental suffixes (<code>UserID_2</code>), ensuring the generated <code>CREATE TABLE</code> statement is structurally sound, uniquely identified, and fundamentally secure against execution anomalies.</p>
 
-        <h2 style="margin-top: 3rem;">Frequently Asked Questions (FAQ)</h2>
+        <h2 class="section-title">Frequently Asked Questions (FAQ)</h2>
         <details>
             <summary>Is my dataset uploaded to any remote server?</summary>
             <p>No. DataForge SQL executes parsing and compilation entirely inside your browser's local memory using Web Workers. Zero bytes are transmitted over the network.</p>
@@ -744,8 +755,8 @@
                 return "''";
             }
             
-            // CSV Injection mitigation
-            if (/^[=+\-@]/.test(val)) val = "'" + val;
+            // CSV Injection mitigation (Fixed to avoid corrupting phone numbers)
+            if (/^=/.test(val)) val = "'" + val;
 
             if (engine === 'postgresql') {
                 val = val.replace(/\0/g, ''); // strip null bytes
@@ -988,13 +999,13 @@
                 }
 
                 if (val === 'postgresql') {
-                    b2bCard.innerHTML = `<h4>Recommended for PostgreSQL</h4><p>Deploy serverless Postgres with <a href="#" target="_blank" rel="nofollow">Neon</a> or build faster with <a href="#" target="_blank" rel="nofollow">Supabase</a>.</p>`;
+                    b2bCard.innerHTML = `<p style="font-weight:600; color:var(--accent);">Recommended for PostgreSQL</p><p>Deploy serverless Postgres with <a href="https://neon.tech" target="_blank" rel="noopener noreferrer">Neon</a> or build faster with <a href="https://supabase.com" target="_blank" rel="noopener noreferrer">Supabase</a>.</p>`;
                     b2bCard.style.display = 'block';
                 } else if (val === 'mysql') {
-                    b2bCard.innerHTML = `<h4>Recommended for MySQL</h4><p>Scale effortlessly with <a href="#" target="_blank" rel="nofollow">PlanetScale</a> or deploy on <a href="#" target="_blank" rel="nofollow">DigitalOcean</a>.</p>`;
+                    b2bCard.innerHTML = `<p style="font-weight:600; color:var(--accent);">Recommended for MySQL</p><p>Scale effortlessly with <a href="https://planetscale.com" target="_blank" rel="noopener noreferrer">PlanetScale</a> or deploy on <a href="https://www.digitalocean.com" target="_blank" rel="noopener noreferrer">DigitalOcean</a>.</p>`;
                     b2bCard.style.display = 'block';
                 } else {
-                    b2bCard.innerHTML = `<h4>Support Privacy</h4><p>If this tool saved you time, consider supporting on <a href="#" target="_blank" rel="nofollow">GitHub Sponsors</a>.</p>`;
+                    b2bCard.innerHTML = `<p style="font-weight:600; color:var(--accent);">Support Privacy</p><p>If this tool saved you time, consider supporting on <a href="https://github.com/sponsors" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a>.</p>`;
                     b2bCard.style.display = 'block';
                 }
             });
