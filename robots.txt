@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://dataforge-sql.pages.dev/sitemap.xml
+Sitemap: https://dataforgesql.com/sitemap.xml
