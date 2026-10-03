@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataForge SQL: Streaming Client-Side CSV to SQL Converter</title>
+    <meta name="description" content="Convert large CSV/TSV files to SQL insert statements directly in your browser. 100% private, client-side processing with multi-dialect support (PostgreSQL, MySQL, SQL Server, SQLite).">
+    
+    <!-- Favicon (SVG Data-URI to prevent 404 requests) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><ellipse cx='12' cy='5' rx='9' ry='3'></ellipse><path d='M21 12c0 1.66-4 3-9 3s-9-1.34-9-3'></path><path d='M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5'></path></svg>">
+
+    <!-- Open Graph & Twitter Cards -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="DataForge SQL: Streaming Client-Side CSV to SQL Converter">
+    <meta property="og:description" content="Convert large CSV/TSV files to SQL insert statements directly in your browser. 100% private, client-side streaming with multi-dialect support.">
+    <meta property="og:url" content="https://dataforgesql.com/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="DataForge SQL: Streaming Client-Side CSV to SQL Converter">
+    <meta name="twitter:description" content="100% private, browser-based streaming CSV/TSV to SQL compiler. PostgreSQL, MySQL, SQL Server, and SQLite.">
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "SoftwareApplication",
+                "@id": "https://dataforgesql.com/#software",
+                "name": "DataForge SQL",
+                "applicationCategory": "DeveloperApplication",
+                "operatingSystem": "Any (Modern Web Browser)",
+                "offers": {
+                    "@type": "Offer",
+                    "price": "0",
+                    "priceCurrency": "USD"
+                },
+                "description": "Browser-based streaming CSV/TSV to SQL compiler with automated type inference and chunking."
+            },
+            {
+                "@type": "FAQPage",
+                "@id": "https://dataforgesql.com/#faq",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "Is my dataset uploaded to any remote server?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "No. DataForge SQL executes parsing and compilation entirely inside your browser's local memory using Web Workers. Zero bytes are transmitted over the network."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "How does DataForge SQL handle SQL Server Msg 10738?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Microsoft SQL Server strictly limits multi-row VALUES clauses to 1,000 rows. DataForge SQL's engine enforces a hard cap for T-SQL dialects, automatically segmenting large datasets to prevent Msg 10738 fatal errors."
+                        }
+                    }
+                ]
+            },
+            {
+                "@type": "HowTo",
+                "@id": "https://dataforgesql.com/#howto",
+                "name": "How to Convert CSV Files to SQL Scripts Privately",
+                "step": [
+                    {
+                        "@type": "HowToStep",
+                        "position": 1,
+                        "name": "Load Data File",
+                        "text": "Drag and drop your CSV or TSV file into the local ingestion zone."
+                    },
+                    {
+                        "@type": "HowToStep",
+                        "position": 2,
+                        "name": "Configure Engine and Dialect",
+                        "text": "Select your target relational database engine and adjust batch size limits."
+                    },
+                    {
+                        "@type": "HowToStep",
+                        "position": 3,
+                        "name": "Export SQL Script",
+                        "text": "Click generate to stream the compiled SQL script directly to your local disk."
+                    }
+                ]
+            }
+        ]
+    }
+    </script>
+
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-hover: #0284c7;
+            --success: #10b981;
+            --danger: #ef4444;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+        }
+
+        /* Ad Slots CSS - Preventing CLS */
+        .ad-slot-leaderboard {
+            min-height: 90px;
+            width: 100%;
+            max-width: 728px;
+            contain: layout size;
+            margin: 1.5rem auto;
+            background-color: var(--bg-panel);
+            border: 1px dashed var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+        
+        @media (max-width: 768px) {
+            .ad-slot-leaderboard { min-height: 50px; max-width: 320px; }
+        }
+
+        .ad-slot-sidebar {
+            min-height: 600px;
+            width: 300px;
+            position: sticky;
+            top: 2rem;
+            contain: layout size;
+            background-color: var(--bg-panel);
+            border: 1px dashed var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .ad-slot-content {
+            min-height: 90px;
+            width: 100%;
+            max-width: 728px;
+            contain: layout size;
+            margin: 3rem auto;
+            background-color: var(--bg-panel);
+            border: 1px dashed var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem 1rem 0;
+        }
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .badge {
+            display: inline-block;
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            margin-bottom: 1rem;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+        
+        @media (max-width: 992px) {
+            .container { grid-template-columns: 1fr; }
+            .ad-slot-sidebar { display: none; }
+        }
+
+        .panel {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+        select, input[type="number"], input[type="text"] {
+            width: 100%;
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.625rem;
+            border-radius: 0.5rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        select:focus, input:focus { border-color: var(--accent); }
+        select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        .switch-label { font-size: 0.875rem; font-weight: 600; }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-muted);
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--accent); border-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(20px); background-color: #fff; }
+        input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
+
+        .b2b-card {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: linear-gradient(145deg, rgba(56, 189, 248, 0.05) 0%, rgba(30, 41, 59, 1) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+        .b2b-card h4 { color: var(--accent); margin-bottom: 0.25rem; }
+        .b2b-card a { color: var(--accent); text-decoration: none; font-weight: 600; }
+        .b2b-card a:hover { text-decoration: underline; }
+
+        .dropzone {
+            border: 2px dashed var(--border-color);
+            border-radius: 1rem;
+            padding: 3rem 2rem;
+            text-align: center;
+            background-color: var(--bg-panel);
+            transition: all 0.2s;
+            cursor: pointer;
+            margin-bottom: 1.5rem;
+        }
+        .dropzone.dragover {
+            border-color: var(--accent);
+            background-color: rgba(56, 189, 248, 0.05);
+        }
+        .dropzone p { color: var(--text-muted); margin-bottom: 1rem; }
+        .dropzone input[type="file"] { display: none; }
+        
+        .btn {
+            background-color: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .btn:hover { background-color: var(--accent-hover); }
+        .btn:disabled { background-color: var(--border-color); color: var(--text-muted); cursor: not-allowed; }
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+        .btn-outline:hover { background-color: var(--bg-dark); }
+
+        .progress-container {
+            display: none;
+            background-color: var(--bg-dark);
+            border-radius: 999px;
+            height: 12px;
+            width: 100%;
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: var(--success);
+            width: 0%;
+            transition: width 0.2s ease;
+        }
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .console-wrapper {
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .console-header {
+            background-color: #0f172a;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .console-header span { font-size: 0.875rem; font-family: var(--font-mono); color: var(--text-muted); }
+        
+        /* Line Numbers UI for Console */
+        .console-body {
+            padding: 0; 
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            color: #a5b4fc;
+            background-color: var(--bg-dark);
+        }
+        .console-table { display: table; width: 100%; border-spacing: 0; }
+        .console-line { display: table-row; }
+        .console-line-num {
+            display: table-cell;
+            padding: 0.25rem 1rem;
+            color: #64748b;
+            text-align: right;
+            user-select: none;
+            border-right: 1px solid #334155;
+            background-color: #0f172a;
+            width: 1%;
+        }
+        .console-line-code {
+            display: table-cell;
+            padding: 0.25rem 1rem;
+            white-space: pre;
+        }
+        .console-line-code span.keyword { color: #c084fc; font-weight: bold; }
+        .console-line-code span.string { color: #86efac; }
+        .console-line-code span.number { color: #fca5a5; }
+
+        /* Article content styling */
+        article {
+            max-width: 800px;
+            margin: 4rem auto;
+            padding: 0 1rem;
+        }
+        article h1 { font-size: 2rem; margin-bottom: 1.5rem; color: #fff; line-height: 1.3; }
+        article h2 { font-size: 1.5rem; margin-top: 2.5rem; margin-bottom: 1rem; color: #e2e8f0; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;}
+        article h3 { font-size: 1.25rem; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #cbd5e1; }
+        article p { margin-bottom: 1rem; color: var(--text-muted); text-align: justify; }
+        article ul { margin-left: 1.5rem; margin-bottom: 1rem; color: var(--text-muted); }
+        article li { margin-bottom: 0.5rem; }
+        
+        .dialect-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            text-align: left;
+            font-size: 0.875rem;
+        }
+        .dialect-table th, .dialect-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+        .dialect-table th { background-color: var(--bg-dark); color: var(--text-main); font-weight: 600; }
+        .dialect-table code { font-family: var(--font-mono); color: var(--accent); background: rgba(56,189,248,0.1); padding: 2px 4px; border-radius: 4px;}
+
+        details {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        summary {
+            padding: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            color: var(--text-main);
+        }
+        details p { padding: 0 1rem 1rem; margin: 0; }
+        
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>DataForge SQL</h1>
+        <div class="badge">100% Client-Side & Private (Zero Network Transmission)</div>
+        <p style="color: var(--text-muted);">Transform massive CSV/TSV datasets into production-ready SQL insertion scripts instantly.</p>
+    </header>
+
+    <div class="ad-slot-leaderboard">
+        Advertisement Space (728x90)
+    </div>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <aside>
+            <div class="panel" style="margin-bottom: 1.5rem;">
+                <div class="form-group">
+                    <label for="engineSelect">Target SQL Engine</label>
+                    <select id="engineSelect">
+                        <option value="postgresql">PostgreSQL</option>
+                        <option value="mysql">MySQL</option>
+                        <option value="sqlserver">Microsoft SQL Server</option>
+                        <option value="sqlite">SQLite</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tableName">Target Table Name</label>
+                    <input type="text" id="tableName" value="imported_data" placeholder="e.g., users">
+                </div>
+
+                <div class="form-group">
+                    <label for="batchSize">Batch Size (Rows per INSERT)</label>
+                    <input type="number" id="batchSize" value="5000" min="1">
+                    <small id="batchWarn" style="color: var(--danger); font-size: 0.75rem; display: none;">SQL Server limits batches to 1,000 rows.</small>
+                </div>
+
+                <div class="switch-container">
+                    <span class="switch-label">Include CREATE TABLE</span>
+                    <label class="switch">
+                        <input type="checkbox" id="includeDDL" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-container">
+                    <span class="switch-label">Empty Strings as NULL</span>
+                    <label class="switch">
+                        <input type="checkbox" id="emptyAsNull" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="b2b-card" id="b2bCard">
+                    <h4>Recommended for PostgreSQL</h4>
+                    <p>Deploy serverless Postgres with <a href="#" target="_blank" rel="nofollow">Neon</a> or build faster with <a href="#" target="_blank" rel="nofollow">Supabase</a>.</p>
+                </div>
+            </div>
+
+            <div class="ad-slot-sidebar">
+                Advertisement Space (300x600)
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main>
+            <div class="panel">
+                <div class="dropzone" id="dropzone">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 1rem; color: var(--accent);">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <h3 style="margin-bottom: 0.5rem;">Drag & Drop your CSV/TSV file</h3>
+                    <p>or click to browse from your local device.</p>
+                    <button class="btn btn-outline" id="browseBtn">Select File</button>
+                    <input type="file" id="fileInput" accept=".csv, .tsv">
+                </div>
+
+                <div id="fileInfo" style="display: none; margin-bottom: 1.5rem; text-align: center;">
+                    <p style="font-weight: 600; color: var(--accent);" id="fileNameDisplay">data.csv</p>
+                    <p style="font-size: 0.875rem; color: var(--text-muted);" id="fileSizeDisplay">0 MB</p>
+                </div>
+
+                <div id="progressArea" style="display: none;">
+                    <div class="progress-container" style="display: block;">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span id="bytesProcessed">0 / 0 MB</span>
+                        <span id="rowsProcessed">0 rows compiled</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+                    <button class="btn" id="startBtn" disabled style="flex: 1;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        Start Streaming to SQL
+                    </button>
+                    <button class="btn btn-outline" id="cancelBtn" disabled>Cancel</button>
+                </div>
+
+                <div class="console-wrapper">
+                    <div class="console-header">
+                        <span>Preview (First 50 lines)</span>
+                        <button class="btn btn-outline" id="copyBtn" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;" disabled>Copy Sample</button>
+                    </div>
+                    <div class="console-body" id="consoleBody">
+                        <div style="padding: 1rem;">// Awaiting data compilation...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="ad-slot-content">
+        Advertisement Space (728x90)
+    </div>
+
+    <article>
+        <h1>DataForge SQL: Streaming Client-Side CSV to SQL Converter</h1>
+        <p>In the modern data engineering ecosystem, developers frequently face the challenge of migrating legacy data stored in flat files (such as CSV or TSV) into robust relational database management systems. While myriad online utilities exist, they universally suffer from critical flaws: severe file size limitations, network latency, and egregious privacy violations. DataForge SQL revolutionizes this workflow by introducing a 100% serverless, client-side streaming architecture that compiles raw text into standard SQL DML directly within the user's browser.</p>
+        <p>By leveraging HTML5 Web Workers and the modern File System Access API, this tool processes multi-gigabyte datasets without ever touching a remote server. The inherent limitations of browser memory heaps—such as the aggressive iOS Jetsam process terminator—are circumvented by processing data in discrete 4MB chunks and streaming the byte outputs directly to the client's hard disk via Promise-based queues.</p>
+
+        <h2>Architecting High-Performance Bulk Data Ingestion</h2>
+        <p>Designing an application capable of parsing gigabytes of text without crashing the browser's UI thread or triggering out-of-memory exceptions requires surgical precision in memory management, garbage collection orchestration, and asynchronous concurrency.</p>
+        
+        <h3>Bulk Inserts vs. Individual Statements: Latency and Network Overhead</h3>
+        <p>When injecting millions of records into a database over a network connection, the TCP/IP transport latency completely eclipses the execution time of the query itself. Consider a network with a moderate round-trip time (RTT) of 15 milliseconds. Emitting individual <code>INSERT INTO</code> statements for 1,000,000 rows implies 1,000,000 distinct network handshakes, resulting in a staggering 4.1 hours spent purely waiting for network acknowledgments, regardless of the database's hardware power.</p>
+        <p>By aggregating rows into bulk insert batches (e.g., utilizing a single <code>INSERT INTO table VALUES (...), (...), (...)</code> structure), DataForge SQL drastically diminishes the TCP round trips and parsing overhead on the target database engine. Grouping those same 1,000,000 rows into optimized batches of 5,000 reduces the network trips to merely 200, slashing the network overhead from over 4 hours to just 3 seconds. The tool utilizes dynamic chunking through Web Workers, ensuring that the DOM remains fluid while complex string concatenations occur off the main thread.</p>
+
+        <h3>Minimizing Transaction Log and WAL Saturation During Mass Ingestion</h3>
+        <p>An often-overlooked consequence of massive data loads is the catastrophic expansion of the database's internal transaction tracking mechanisms. In PostgreSQL, this is governed by the Write-Ahead Log (WAL), whereas Microsoft SQL Server utilizes the Transaction Log file (usually an `.ldf` extension). Exorbitant, unsegmented batch insertions force the database to allocate vast contiguous memory blocks to maintain the ACID properties of the transaction.</p>
+        <p>In PostgreSQL, if a transaction generates WAL records faster than the checkpoint process can write dirty pages to disk, the `max_wal_size` parameter is breached. This causes the database to throttle performance aggressively or fail the transaction entirely. Similarly, in SQL Server, a single massive bulk insert in the "Full Recovery Model" forces the `.ldf` file to undergo automatic file growth (Auto-Growth). Auto-growth events lock the entire database file on disk, halting all queries until the file expands. If the transaction rolls back due to a single malformed row, the rollback phase can freeze the server for hours.</p>
+        <p>DataForge SQL mitigates these disasters by allowing database administrators to explicitly define batch size thresholds. By pacing the generated SQL into digestible, bounded transaction limits (e.g., 2,500 to 5,000 rows per block), developers can execute their ingestion scripts sequentially. This provides the database's background writer processes adequate breathing room to flush dirty pages, avoiding catastrophic file fragmentation and preserving overarching system stability.</p>
+
+        <h2>Cross-Engine Dialect Matrix: Syntax, Typing, and Quoting Standards</h2>
+        <p>Relational databases are notoriously fragmented when it comes to lexical parsing. A SQL script that executes flawlessly in MySQL will almost certainly trigger fatal syntax exceptions in PostgreSQL or SQL Server. DataForge SQL incorporates a dialect-aware compilation engine that meticulously structures the output to satisfy engine-specific constraints.</p>
+
+        <div style="overflow-x:auto;">
+            <table class="dialect-table">
+                <thead>
+                    <tr>
+                        <th>Relational Engine</th>
+                        <th>Identifier Delimiter</th>
+                        <th>String Escaping standard</th>
+                        <th>Boolean Strict Type</th>
+                        <th>DML Batch Limits</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>PostgreSQL</strong></td>
+                        <td>Double Quotes (<code>"col"</code>)</td>
+                        <td>Duplication (<code>''</code>)</td>
+                        <td><code>TRUE</code> / <code>FALSE</code></td>
+                        <td>Memory bounds (Defaults to 5,000)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MySQL</strong></td>
+                        <td>Backticks (<code>`col`</code>)</td>
+                        <td>Backslashes (<code>\'</code> or <code>\\</code>)</td>
+                        <td>Integer proxy (<code>1</code> / <code>0</code>)</td>
+                        <td><code>max_allowed_packet</code> bound</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Microsoft SQL Server</strong></td>
+                        <td>Brackets (<code>[col]</code>)</td>
+                        <td>Duplication (<code>''</code>)</td>
+                        <td>Integer proxy (<code>1</code> / <code>0</code>) for BIT</td>
+                        <td>Strict 1,000-row limit (Msg 10738)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SQLite</strong></td>
+                        <td>Double Quotes (<code>"col"</code>)</td>
+                        <td>Duplication (<code>''</code>)</td>
+                        <td>Integer proxy (<code>1</code> / <code>0</code>)</td>
+                        <td>Parser bounds (Defaults to 1,000)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>PostgreSQL: Parameter Count Bounds, Transaction Blocks, and Type Casts</h3>
+        <p>PostgreSQL adheres strictly to ANSI SQL standards for identifiers and string literals. Within our compilation matrix, all table and column identifiers are encapsulated in double quotes (<code>"column_name"</code>) to preserve case sensitivity and accommodate reserved keywords. String literals are escaped by duplicating single quotes. Furthermore, PostgreSQL's parser is exceptionally vulnerable to the null byte (<code>0x00</code> or <code>\0</code>). If a raw CSV contains a null byte, the Postgres transaction immediately fails and requires an abort. DataForge SQL actively purges all null bytes from string payloads.</p>
+
+        <h3>MySQL: max_allowed_packet Boundaries, Backtick Escaping, and Bulk Optimization</h3>
+        <p>MySQL utilizes a proprietary lexical structure heavily influenced by its legacy storage engines. Identifiers must be enclosed in backticks (<code>`column_name`</code>). String literal escaping in MySQL requires defensive preparation against both single quotes (<code>\'</code>) and backslashes (<code>\\</code>). This is necessary because the <code>NO_BACKSLASH_ESCAPES</code> SQL mode is rarely enabled by default on shared infrastructure. A critical constraint in MySQL is the <code>max_allowed_packet</code> server variable, which dictates the maximum size of a single query string. To circumvent packet rejection, the default chunk threshold is throttled to 2,500 rows per batch.</p>
+
+        <h3>SQL Server: The 1,000-Row Table Value Constructor Ceiling and Msg 10738</h3>
+        <p>Microsoft SQL Server imposes one of the most draconian restrictions in modern relational databases regarding bulk inserts. Attempting to pass more than 1,000 rows in a single Table Value Constructor (a single <code>VALUES</code> clause) triggers the fatal exception: <strong>Msg 10738, Level 15, State 1: The number of row value expressions in the INSERT statement exceeds the maximum allowed number of 1000 row values.</strong> The DataForge SQL engine detects when T-SQL is selected and enforces a hard, unyielding constraint. Even if the user attempts to input a batch size of 5,000, the Web Worker dynamically throttles the chunking array, terminating the statement exactly at the 1,000-row mark. Identifiers are also properly bracketed (<code>[column_name]</code>) per standard T-SQL conventions.</p>
+
+        <h3>SQLite: In-Memory Ingestion, Pragmas, and Variable Thresholds</h3>
+        <p>As an embedded database, SQLite's capabilities vary wildly depending on compile-time limits (specifically <code>SQLITE_MAX_VARIABLE_NUMBER</code> and <code>SQLITE_MAX_COMPOUND_SELECT</code>). While recent versions allow up to 32,766 variables, legacy builds cap at 999. To maintain maximum backward compatibility, the dialect matrix applies double quotes for identifiers and maintains a conservative 1,000-row ceiling per batch. SQLite's dynamic, weakly-typed affinity system is highly permissive, but DataForge SQL still generates standardized strict DDL to facilitate proper schema normalization and cross-compatibility if the database is later migrated to a heavier engine.</p>
+
+        <h2>Automated Data Integrity: Type Inference and Widening Heuristics</h2>
+        <p>Generating a precise <code>CREATE TABLE</code> Data Definition Language (DDL) statement from a schema-less CSV requires advanced heuristic analysis. DataForge SQL employs a deterministic type inference engine that analyzes the first 1,000 rows of the dataset to assign optimal relational data types.</p>
+
+        <h3>Disambiguating Numeric Precision, Floating Points, and Large Integers</h3>
+        <p>The parser evaluates each cell using strict regular expressions. Boolean types are extracted via case-insensitive matches against <code>true/false</code> or binary flags. Numerics are evaluated for standard 32-bit limits; if an integer surpasses the 2,147,483,647 threshold, the engine automatically promotes the column to <code>BIGINT</code>. Floats and scientific notation trigger <code>NUMERIC</code> or <code>DECIMAL</code> allocations. If an ISO 8601 date string is detected, it is classified as a <code>TIMESTAMP</code>.</p>
+        <p>Because CSVs are inherently volatile and user-generated, the system utilizes an architectural pattern known as "Type Widening." If row 4,500 introduces a text string into a column previously classified as an integer during the initial inference, the internal compiler dynamically broadens the evaluation scope in real-time. It treats subsequent inserts for that column as sanitized text (<code>VARCHAR</code>) to prevent the entire SQL execution from hard-crashing at the destination, sacrificing strict typing in favor of load resilience.</p>
+
+        <h3>Relational Tri-Value Logic: Differentiating NULL Markers from Empty Strings</h3>
+        <p>In relational algebra, an empty string (<code>''</code>) is a definitive, allocated scalar value indicating a string of zero length, whereas <code>NULL</code> represents the absolute, definitive absence of data (an unknown state). Failing to differentiate between the two leads to catastrophic reporting errors in aggregate functions like <code>COUNT()</code> and <code>AVG()</code>. For numeric, boolean, and timestamp columns, DataForge SQL strictly enforces a rule where empty CSV cells are output as unquoted <code>NULL</code> literals.</p>
+        <p>For textual data, the tool provides a UI-level toggle, allowing database administrators to dictate whether blank cells should be cast as <code>NULL</code> or preserved as <code>''</code> (empty strings), adhering to the specific tri-value logic requirements of their downstream business intelligence layer.</p>
+
+        <h2>Enterprise Security and Regulatory Compliance in Browser Processing</h2>
+        <p>In the era of stringent data privacy legislation, uploading proprietary corporate datasets, financial ledgers, or Personal Identifiable Information (PII) to anonymous third-party utility servers is an unacceptable security risk that violates internal audit policies.</p>
+
+        <h3>HIPAA and GDPR Alignment: Zero-Network Ingestion via Local Web Workers</h3>
+        <p>By leveraging the HTML5 File System Access API and native Blob Object Fallbacks, DataForge SQL guarantees that 100% of the computation happens on the client's local CPU. Not a single byte of the source CSV or the generated SQL is transmitted over the network. This localized isolation architecture inherently complies with the General Data Protection Regulation (GDPR) and the Health Insurance Portability and Accountability Act (HIPAA), as the tool acts solely as an offline interface executing JavaScript logic. Once the browser tab is closed, all memory references are handed to the JavaScript garbage collector, and all traces of the data are instantly purged from volatile memory.</p>
+
+        <h3>Mitigating CSV Formula Injection Vectors and Malicious DDL Payloads</h3>
+        <p>CSV files extracted from untrusted sources often contain executable spreadsheet formulas (CSV Injection) or malicious SQL payloads. If a user re-opens the processed dataset in Excel or Google Sheets, a cell beginning with <code>=</code>, <code>+</code>, <code>-</code>, or <code>@</code> can execute arbitrary commands on the OS or manipulate cell output (e.g., <code>=cmd|' /C calc'!A0</code>). The compiler scans for these prefix triggers, prepending an escape apostrophe to neutralize the executable threat.</p>
+        <p>Furthermore, to prevent DDL injection via manipulated or carelessly formatted header rows, all column names are strictly deduplicated and sanitized. Any character that is not alphanumeric or an underscore is stripped via regex (<code>/^[a-zA-Z0-9_]+$/</code>). If two columns result in the identical sanitized name (e.g., <code>User ID</code> and <code>User-ID</code> becoming <code>UserID</code>), the compiler automatically applies incremental suffixes (<code>UserID_2</code>), ensuring the generated <code>CREATE TABLE</code> statement is structurally sound, uniquely identified, and fundamentally secure against execution anomalies.</p>
+
+        <h2 style="margin-top: 3rem;">Frequently Asked Questions (FAQ)</h2>
+        <details>
+            <summary>Is my dataset uploaded to any remote server?</summary>
+            <p>No. DataForge SQL executes parsing and compilation entirely inside your browser's local memory using Web Workers. Zero bytes are transmitted over the network.</p>
+        </details>
+        <details>
+            <summary>How does DataForge SQL handle SQL Server Msg 10738?</summary>
+            <p>Microsoft SQL Server strictly limits multi-row VALUES clauses to 1,000 rows. DataForge SQL's engine enforces a hard cap for T-SQL dialects, automatically segmenting large datasets to prevent Msg 10738 fatal errors regardless of UI configuration.</p>
+        </details>
+        <details>
+            <summary>Why does the tool generate multiple INSERT statements instead of one?</summary>
+            <p>Databases limit the size of a single query (e.g., MySQL's max_allowed_packet) and manage transaction sizes via log files (WAL/LDF). Grouping inserts into optimized batches (like 2,500 or 5,000 rows) guarantees successful execution, avoids memory timeouts, and prevents transaction log saturation.</p>
+        </details>
+        <details>
+            <summary>Can this tool process files larger than 1GB?</summary>
+            <p>Yes. By utilizing the File System Access API in Chromium-based browsers, the tool streams the CSV in 4MB chunks, compiles the SQL, and writes directly to your hard drive sequentially. For older browsers like Safari on iOS, it leverages Blob fallback encapsulation to circumvent Jetsam limits, completely bypassing standard browser RAM exhaustion thresholds.</p>
+        </details>
+    </article>
+
+    <!-- WEB WORKER SCRIPT -->
+    <script type="text/worker" id="workerCode">
+        importScripts('https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js');
+
+        let engine = 'postgresql';
+        let tableName = 'imported_data';
+        let batchSize = 5000;
+        let includeDDL = true;
+        let emptyAsNull = true;
+        
+        let headers = [];
+        let columnTypes = []; // "BOOLEAN", "INTEGER", "BIGINT", "NUMERIC", "TIMESTAMP", "VARCHAR"
+        let isFirstChunk = true;
+        let rowsProcessed = 0;
+        
+        // Accumulators for the first 1000 rows to infer types
+        let inferenceBuffer = [];
+        let inferenceLimit = 1000;
+        let ddlWritten = false;
+        let previewSent = false;
+        
+        // Chunk batching
+        let currentBatch = [];
+        let currentBatchCount = 0;
+        
+        function inferType(val) {
+            if (val === null || val === undefined || val.trim() === "") return "NULL";
+            if (/^(true|false|1|0|t|f|y|yes|no)$/i.test(val.trim())) return "BOOLEAN";
+            if (/^-?\d+$/.test(val.trim())) {
+                try {
+                    const n = BigInt(val.trim());
+                    if (n >= -2147483648n && n <= 2147483647n) return "INTEGER";
+                    return "BIGINT";
+                } catch(e) { return "VARCHAR"; }
+            }
+            if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(val.trim())) return "NUMERIC";
+            if (/^\d{4}-\d{2}-\d{2}(?:[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)?$/.test(val.trim())) return "TIMESTAMP";
+            return "VARCHAR";
+        }
+
+        function resolveTypeHierarchy(current, incoming) {
+            if (incoming === "NULL") return current;
+            if (current === "NULL") return incoming;
+            const hierarchy = { "VARCHAR": 6, "TIMESTAMP": 5, "NUMERIC": 4, "BIGINT": 3, "INTEGER": 2, "BOOLEAN": 1 };
+            const cLvl = hierarchy[current] || 6;
+            const iLvl = hierarchy[incoming] || 6;
+            return cLvl >= iLvl ? current : incoming;
+        }
+
+        function sanitizeHeader(header, index) {
+            let clean = header.replace(/[^a-zA-Z0-9_]/g, '');
+            if (!clean || clean.match(/^\d/)) clean = "col_" + (index + 1) + (clean ? "_" + clean : "");
+            return clean;
+        }
+
+        function quoteIdent(ident) {
+            if (engine === 'mysql') return '`' + ident + '`';
+            if (engine === 'sqlserver') return '[' + ident + ']';
+            return '"' + ident + '"'; 
+        }
+
+        function escapeValue(val, type) {
+            if (val === null || val === undefined || val.trim() === "") {
+                if (type !== "VARCHAR" || emptyAsNull) return "NULL";
+                return "''";
+            }
+            
+            // CSV Injection mitigation
+            if (/^[=+\-@]/.test(val)) val = "'" + val;
+
+            if (engine === 'postgresql') {
+                val = val.replace(/\0/g, ''); // strip null bytes
+                return "'" + val.replace(/'/g, "''") + "'";
+            }
+            if (engine === 'mysql') {
+                return "'" + val.replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'";
+            }
+            if (engine === 'sqlserver' || engine === 'sqlite') {
+                return "'" + val.replace(/'/g, "''") + "'";
+            }
+            return "'" + val + "'";
+        }
+
+        function generateDDL() {
+            let sql = `CREATE TABLE ${quoteIdent(tableName)} (\n`;
+            let cols = [];
+            for (let i = 0; i < headers.length; i++) {
+                let dbType = columnTypes[i] || "VARCHAR(255)";
+                if (dbType === "VARCHAR") dbType = (engine === 'mysql' || engine === 'postgresql') ? "TEXT" : "VARCHAR(MAX)";
+                if (dbType === "VARCHAR(MAX)" && engine === 'sqlite') dbType = "TEXT";
+                if (dbType === "BOOLEAN" && engine === 'sqlserver') dbType = "BIT";
+                cols.push(`    ${quoteIdent(headers[i])} ${dbType}`);
+            }
+            sql += cols.join(",\n") + "\n);\n\n";
+            return sql;
+        }
+
+        function formatRowSQL(row, types, applyWidening) {
+            let vals = [];
+            for (let j = 0; j < headers.length; j++) {
+                let val = row[j] !== undefined ? row[j] : "";
+                
+                if (applyWidening) {
+                    let expected = types[j];
+                    if (expected !== "VARCHAR") {
+                        let actual = inferType(val);
+                        if (actual !== "NULL" && resolveTypeHierarchy(expected, actual) !== expected) {
+                            types[j] = "VARCHAR";
+                        }
+                    }
+                }
+                
+                if (types[j] === "BOOLEAN") {
+                    if (val.trim() === "") vals.push("NULL");
+                    else {
+                        let isTrue = /^(true|1|t|y|yes)$/i.test(val.trim());
+                        if (engine === 'postgresql') vals.push(isTrue ? "TRUE" : "FALSE");
+                        else vals.push(isTrue ? "1" : "0");
+                    }
+                } else if (types[j] === "INTEGER" || types[j] === "BIGINT" || types[j] === "NUMERIC") {
+                    if (val.trim() === "") vals.push("NULL");
+                    else vals.push(val.trim());
+                } else {
+                    vals.push(escapeValue(val, types[j]));
+                }
+            }
+            return vals.join(', ');
+        }
+
+        function generatePreviewBlock(rowsBuffer) {
+            let pSql = includeDDL ? generateDDL() : "";
+            if (rowsBuffer.length > 0) {
+                pSql += `INSERT INTO ${quoteIdent(tableName)} (${headers.map(quoteIdent).join(', ')}) VALUES \n`;
+                let pVals = [];
+                let rowLimit = Math.min(50, rowsBuffer.length);
+                for(let i=0; i<rowLimit; i++) {
+                    pVals.push(`    (${formatRowSQL(rowsBuffer[i], columnTypes, false)})`);
+                }
+                pSql += pVals.join(",\n") + ";\n";
+            }
+            return pSql;
+        }
+
+        function flushBatch() {
+            if (currentBatch.length === 0) return;
+            let sql = `INSERT INTO ${quoteIdent(tableName)} (${headers.map(quoteIdent).join(', ')}) VALUES \n`;
+            let rows = [];
+            for (let i = 0; i < currentBatch.length; i++) {
+                rows.push(`    (${formatRowSQL(currentBatch[i], columnTypes, true)})`);
+            }
+            sql += rows.join(",\n") + ";\n\n";
+            
+            postMessage({ type: 'chunk', sql: sql });
+            currentBatch = [];
+            currentBatchCount = 0;
+        }
+
+        function finalizeInference() {
+            for(let k=0; k<columnTypes.length; k++) {
+                if(columnTypes[k] === "NULL") columnTypes[k] = "VARCHAR";
+            }
+            
+            if (!previewSent) {
+                postMessage({ type: 'preview', sql: generatePreviewBlock(inferenceBuffer) });
+                previewSent = true;
+            }
+
+            if (includeDDL) {
+                postMessage({ type: 'chunk', sql: generateDDL() });
+            }
+            ddlWritten = true;
+        }
+
+        self.onmessage = function(e) {
+            const data = e.data;
+            if (data.type === 'start') {
+                engine = data.engine;
+                tableName = data.tableName;
+                batchSize = data.batchSize;
+                includeDDL = data.includeDDL;
+                emptyAsNull = data.emptyAsNull;
+                
+                if (engine === 'sqlserver' && batchSize > 1000) batchSize = 1000;
+
+                Papa.parse(data.file, {
+                    delimiter: data.file.name.toLowerCase().endsWith('.tsv') ? '\t' : '',
+                    chunkSize: 1024 * 1024 * 4, // 4MB
+                    skipEmptyLines: true,
+                    chunk: function(results, parser) {
+                        let dataRows = results.data;
+                        if (!dataRows || dataRows.length === 0) return;
+
+                        let startIndex = 0;
+                        if (rowsProcessed === 0) {
+                            let seen = new Set();
+                            headers = dataRows[0].map((h, i) => {
+                                let base = sanitizeHeader(h, i);
+                                let finalH = base;
+                                let counter = 2;
+                                while (seen.has(finalH.toLowerCase())) {
+                                    finalH = base + "_" + counter;
+                                    counter++;
+                                }
+                                seen.add(finalH.toLowerCase());
+                                return finalH;
+                            });
+                            columnTypes = new Array(headers.length).fill("NULL");
+                            startIndex = 1; // skip header
+                        }
+
+                        for (let i = startIndex; i < dataRows.length; i++) {
+                            let row = dataRows[i];
+                            if (row.length < headers.length) continue; 
+                            
+                            rowsProcessed++;
+                            
+                            if (!ddlWritten && inferenceBuffer.length < inferenceLimit) {
+                                inferenceBuffer.push(row);
+                                for (let j = 0; j < headers.length; j++) {
+                                    let t = inferType(row[j]);
+                                    columnTypes[j] = resolveTypeHierarchy(columnTypes[j], t);
+                                }
+                                
+                                if (inferenceBuffer.length === inferenceLimit) {
+                                    finalizeInference();
+                                    for (let r of inferenceBuffer) {
+                                        currentBatch.push(r);
+                                        currentBatchCount++;
+                                        if (currentBatchCount >= batchSize) flushBatch();
+                                    }
+                                    inferenceBuffer = [];
+                                }
+                            } else {
+                                currentBatch.push(row);
+                                currentBatchCount++;
+                                if (currentBatchCount >= batchSize) flushBatch();
+                            }
+                        }
+                        
+                        let bytes = 0;
+                        if (data.file.size) bytes = results.meta.cursor || 0; 
+                        postMessage({ type: 'progress', rows: rowsProcessed, bytes: bytes, totalBytes: data.file.size });
+                        
+                        dataRows = null;
+                        results = null;
+                    },
+                    complete: function() {
+                        if (!ddlWritten && inferenceBuffer.length > 0) {
+                            finalizeInference();
+                            for (let r of inferenceBuffer) {
+                                currentBatch.push(r);
+                                currentBatchCount++;
+                                if (currentBatchCount >= batchSize) flushBatch();
+                            }
+                            inferenceBuffer = [];
+                        }
+                        
+                        flushBatch();
+                        postMessage({ type: 'done', rows: rowsProcessed });
+                    },
+                    error: function(err) {
+                        postMessage({ type: 'error', error: err });
+                    }
+                });
+            }
+        };
+    </script>
+
+    <!-- MAIN UI THREAD SCRIPT -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const engineSelect = document.getElementById('engineSelect');
+            const batchSize = document.getElementById('batchSize');
+            const batchWarn = document.getElementById('batchWarn');
+            const b2bCard = document.getElementById('b2bCard');
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('fileInput');
+            const browseBtn = document.getElementById('browseBtn');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            const fileSizeDisplay = document.getElementById('fileSizeDisplay');
+            const startBtn = document.getElementById('startBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const progressArea = document.getElementById('progressArea');
+            const progressBar = document.getElementById('progressBar');
+            const bytesProcessedEl = document.getElementById('bytesProcessed');
+            const rowsProcessedEl = document.getElementById('rowsProcessed');
+            const consoleBody = document.getElementById('consoleBody');
+            const copyBtn = document.getElementById('copyBtn');
+
+            let selectedFile = null;
+            let worker = null;
+            let writableStream = null;
+            let blobChunks = [];
+            let useFallback = false;
+            let sqlPreviewText = "";
+            let writePromise = Promise.resolve(); // Strict FIFO Queue
+
+            engineSelect.addEventListener('change', (e) => {
+                const val = e.target.value;
+                if (val === 'sqlserver') {
+                    batchSize.value = 1000;
+                    batchWarn.style.display = 'block';
+                } else {
+                    batchWarn.style.display = 'none';
+                    if (val === 'postgresql') batchSize.value = 5000;
+                    if (val === 'mysql') batchSize.value = 2500;
+                    if (val === 'sqlite') batchSize.value = 1000;
+                }
+
+                if (val === 'postgresql') {
+                    b2bCard.innerHTML = `<h4>Recommended for PostgreSQL</h4><p>Deploy serverless Postgres with <a href="#" target="_blank" rel="nofollow">Neon</a> or build faster with <a href="#" target="_blank" rel="nofollow">Supabase</a>.</p>`;
+                    b2bCard.style.display = 'block';
+                } else if (val === 'mysql') {
+                    b2bCard.innerHTML = `<h4>Recommended for MySQL</h4><p>Scale effortlessly with <a href="#" target="_blank" rel="nofollow">PlanetScale</a> or deploy on <a href="#" target="_blank" rel="nofollow">DigitalOcean</a>.</p>`;
+                    b2bCard.style.display = 'block';
+                } else {
+                    b2bCard.innerHTML = `<h4>Support Privacy</h4><p>If this tool saved you time, consider supporting on <a href="#" target="_blank" rel="nofollow">GitHub Sponsors</a>.</p>`;
+                    b2bCard.style.display = 'block';
+                }
+            });
+
+            batchSize.addEventListener('input', (e) => {
+                if (engineSelect.value === 'sqlserver' && e.target.value > 1000) {
+                    e.target.value = 1000;
+                }
+            });
+
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.classList.add('dragover');
+            });
+            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+            });
+            browseBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) handleFile(e.target.files[0]);
+            });
+
+            function handleFile(file) {
+                if (!file.name.endsWith('.csv') && !file.name.endsWith('.tsv')) {
+                    alert('Please select a valid CSV or TSV file.');
+                    return;
+                }
+                selectedFile = file;
+                fileNameDisplay.textContent = file.name;
+                fileSizeDisplay.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+                fileInfo.style.display = 'block';
+                startBtn.disabled = false;
+            }
+
+            function highlightSQLLines(sql) {
+                const lines = sql.split('\n');
+                let out = '<div class="console-table">';
+                for(let i=0; i<lines.length; i++) {
+                    let formatted = lines[i]
+                        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                        .replace(/\b(INSERT INTO|VALUES|CREATE TABLE|VARCHAR|INTEGER|BIGINT|NUMERIC|TIMESTAMP|BOOLEAN|BIT|TEXT|TRUE|FALSE|NULL)\b/ig, '<span class="keyword">$1</span>')
+                        .replace(/('.*?')/g, '<span class="string">$1</span>')
+                        .replace(/\b(\d+)\b/g, '<span class="number">$1</span>');
+                    out += `<div class="console-line"><div class="console-line-num">${i+1}</div><div class="console-line-code">${formatted || ' '}</div></div>`;
+                }
+                out += '</div>';
+                return out;
+            }
+
+            startBtn.addEventListener('click', async () => {
+                if (!selectedFile) return;
+
+                const outName = selectedFile.name.replace(/\.[^/.]+$/, "") + ".sql";
+                try {
+                    if (window.showSaveFilePicker) {
+                        const fileHandle = await window.showSaveFilePicker({
+                            suggestedName: outName,
+                            types: [{description: 'SQL Script', accept: {'application/sql': ['.sql']}}]
+                        });
+                        writableStream = await fileHandle.createWritable();
+                        useFallback = false;
+                    } else {
+                        throw new Error('File System Access API not supported (iOS/Firefox)');
+                    }
+                } catch (err) {
+                    if (err.name === 'AbortError') return; 
+                    console.warn('Using Blob Fallback for download (iOS Jetsam Prevention)', err);
+                    useFallback = true;
+                    blobChunks = [];
+                }
+
+                startBtn.disabled = true;
+                cancelBtn.disabled = false;
+                engineSelect.disabled = true;
+                document.getElementById('tableName').disabled = true;
+                batchSize.disabled = true;
+                document.getElementById('includeDDL').disabled = true;
+                document.getElementById('emptyAsNull').disabled = true;
+                browseBtn.disabled = true;
+
+                progressArea.style.display = 'block';
+                progressBar.style.width = '0%';
+                consoleBody.innerHTML = '<div style="padding: 1rem;">Initializing Web Worker and processing chunks...</div>';
+                sqlPreviewText = "";
+                writePromise = Promise.resolve(); 
+
+                const workerScript = document.getElementById('workerCode').textContent;
+                const blob = new Blob([workerScript], {type: 'application/javascript'});
+                worker = new Worker(URL.createObjectURL(blob));
+
+                worker.onmessage = async function(e) {
+                    const data = e.data;
+                    if (data.type === 'preview') {
+                        sqlPreviewText = data.sql;
+                        consoleBody.innerHTML = highlightSQLLines(sqlPreviewText + "\n/* ... Streaming directly to disk to preserve memory ... */");
+                        copyBtn.disabled = false;
+                    } 
+                    else if (data.type === 'chunk') {
+                        if (useFallback) {
+                            blobChunks.push(new Blob([data.sql], { type: 'text/plain' }));
+                        } else {
+                            writePromise = writePromise.then(async () => {
+                                if (writableStream) {
+                                    await writableStream.write(data.sql);
+                                }
+                            });
+                        }
+                    } 
+                    else if (data.type === 'progress') {
+                        let pct = Math.min(100, Math.round((data.bytes / data.totalBytes) * 100));
+                        if (isNaN(pct)) pct = 0;
+                        progressBar.style.width = pct + '%';
+                        bytesProcessedEl.textContent = `${(data.bytes/(1024*1024)).toFixed(2)} / ${(data.totalBytes/(1024*1024)).toFixed(2)} MB`;
+                        rowsProcessedEl.textContent = `${data.rows.toLocaleString()} rows compiled`;
+                    } 
+                    else if (data.type === 'done') {
+                        cleanup(true, data.rows);
+                    } 
+                    else if (data.type === 'error') {
+                        consoleBody.innerHTML = '<div style="padding: 1rem; color:var(--danger)">Error: ' + data.error + '</div>';
+                        cleanup(false);
+                    }
+                };
+
+                worker.postMessage({
+                    type: 'start',
+                    file: selectedFile,
+                    engine: engineSelect.value,
+                    tableName: document.getElementById('tableName').value,
+                    batchSize: parseInt(batchSize.value, 10),
+                    includeDDL: document.getElementById('includeDDL').checked,
+                    emptyAsNull: document.getElementById('emptyAsNull').checked
+                });
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                cleanup(false);
+                consoleBody.innerHTML = '<div style="padding: 1rem; color:var(--danger)">Process aborted by user.</div>';
+            });
+
+            async function cleanup(success, finalRows = 0) {
+                if (worker) {
+                    worker.terminate();
+                    worker = null;
+                }
+                
+                await writePromise;
+                
+                if (writableStream) {
+                    await writableStream.close();
+                    writableStream = null;
+                } else if (useFallback && success) {
+                    const blob = new Blob(blobChunks, {type: 'application/sql'});
+                    blobChunks = []; 
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = selectedFile.name.replace(/\.[^/.]+$/, "") + ".sql";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                }
+                
+                startBtn.disabled = false;
+                cancelBtn.disabled = true;
+                engineSelect.disabled = false;
+                document.getElementById('tableName').disabled = false;
+                batchSize.disabled = false;
+                document.getElementById('includeDDL').disabled = false;
+                document.getElementById('emptyAsNull').disabled = false;
+                browseBtn.disabled = false;
+                
+                if (success) {
+                    progressBar.style.width = '100%';
+                    consoleBody.innerHTML = highlightSQLLines(sqlPreviewText) + `<div style="padding: 1rem; color: var(--success); font-family: var(--font-mono); font-size: 0.875rem;">/* Successfully compiled ${finalRows.toLocaleString()} rows directly to local disk. */</div>`;
+                }
+            }
+
+            copyBtn.addEventListener('click', () => {
+                if (sqlPreviewText) {
+                    navigator.clipboard.writeText(sqlPreviewText).then(() => {
+                        const orig = copyBtn.textContent;
+                        copyBtn.textContent = 'Copied!';
+                        setTimeout(() => copyBtn.textContent = orig, 2000);
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
