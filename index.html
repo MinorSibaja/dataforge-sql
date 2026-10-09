@@ -450,7 +450,110 @@
             color: var(--text-main);
         }
         details p { padding: 0 1rem 1rem; margin: 0; }
-        
+
+        /* Footer Styling */
+        footer.site-footer {
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-panel);
+            padding: 2.5rem 1rem;
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 4rem;
+        }
+        .footer-links {
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .footer-links a {
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+            color: var(--accent-hover);
+        }
+
+        /* Legal Modals (<dialog>) Styling */
+        dialog.legal-modal {
+            background-color: var(--bg-panel);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            max-width: 760px;
+            width: 90%;
+            max-height: 85vh;
+            padding: 0;
+            margin: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
+            overflow: hidden;
+        }
+        dialog.legal-modal::backdrop {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(4px);
+        }
+        .modal-header {
+            background-color: #0f172a;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            font-size: 1.25rem;
+            margin: 0;
+            color: var(--text-main);
+        }
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            transition: color 0.2s;
+        }
+        .modal-close-btn:hover {
+            color: var(--text-main);
+        }
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: calc(85vh - 130px);
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+        .modal-body h3 {
+            color: #e2e8f0;
+            font-size: 1rem;
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        .modal-body p {
+            margin-bottom: 0.75rem;
+            text-align: justify;
+        }
+        .modal-body ul {
+            margin-left: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+        .modal-body li {
+            margin-bottom: 0.25rem;
+        }
+        .modal-footer {
+            background-color: #0f172a;
+            padding: 0.75rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            text-align: right;
+        }
     </style>
 </head>
 <body>
@@ -687,6 +790,82 @@
             <p>Yes. By utilizing the File System Access API in Chromium-based browsers, the tool streams the CSV in 4MB chunks, compiles the SQL, and writes directly to your hard drive sequentially. For older browsers like Safari on iOS, it leverages Blob fallback encapsulation to circumvent Jetsam limits, completely bypassing standard browser RAM exhaustion thresholds.</p>
         </details>
     </article>
+
+    <!-- Semantic Footer -->
+    <footer class="site-footer">
+        <div class="footer-links">
+            <a href="#privacy" id="privacyLink">Privacy Policy</a>
+            <a href="#terms" id="termsLink">Terms of Service</a>
+            <a href="https://github.com/MinorSibaja/dataforge-sql" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
+        </div>
+        <p>© 2026 DataForge SQL. High-performance, client-side data conversion. Zero server uploads.</p>
+    </footer>
+
+    <!-- Privacy Policy Modal -->
+    <dialog id="privacyModal" class="legal-modal">
+        <div class="modal-header">
+            <h2>Privacy Policy</h2>
+            <button type="button" class="modal-close-btn" id="closePrivacyBtn" aria-label="Close Privacy Policy dialog">✕</button>
+        </div>
+        <div class="modal-body">
+            <p><strong>Effective Date:</strong> October 2026</p>
+            <p>At <strong>DataForge SQL</strong> (accessible from https://dataforgesql.com), privacy is the foundational architecture of our service. This Privacy Policy details our operational commitments, zero-data-collection infrastructure, and standard advertising disclosures.</p>
+
+            <h3>1. Zero-Knowledge, Client-Side Data Processing</h3>
+            <p>DataForge SQL operates exclusively on client-side technology utilizing HTML5 Web Workers, modern File System Access APIs, and in-memory Web Streams. <strong>Zero bytes of your uploaded datasets (CSV, TSV, or generated SQL scripts) are ever transmitted across the network, uploaded to remote servers, or stored in databases.</strong> All computations occur solely in your device's local volatile memory and are purged immediately when the session ends or the browser tab is closed.</p>
+
+            <h3>2. Third-Party Advertising and Google AdSense Disclosures</h3>
+            <p>To support the free operation of this utility, this website may display advertisements served by third-party vendor networks, including Google AdSense. In compliance with Google AdSense program policies:</p>
+            <ul>
+                <li>Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to this website or other websites across the Internet.</li>
+                <li>Google's use of advertising cookies enables it and its partners to serve targeted ads to users based on their navigation history across our site and/or other sites on the web.</li>
+                <li>Users may opt out of personalized advertising by visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer" style="color:var(--accent);">Google Ads Settings</a>.</li>
+                <li>Alternatively, you can opt out of a third-party vendor's use of cookies for personalized advertising by visiting <a href="https://www.aboutads.info/choices/" target="_blank" rel="noopener noreferrer" style="color:var(--accent);">www.aboutads.info</a>.</li>
+            </ul>
+
+            <h3>3. Web Telemetry and Cookieless Analytics</h3>
+            <p>We utilize Cloudflare Web Analytics to monitor aggregate operational performance, Core Web Vitals, and geographic server routing. This analytics solution does not set tracking cookies, does not collect personal identifiers (PII), and does not profile individual users.</p>
+
+            <h3>4. General Data Protection Regulation (GDPR) & CCPA Compliance</h3>
+            <p>Because DataForge SQL neither collects, stores, nor processes personal data on remote infrastructure, our service inherently aligns with the principles of data minimization and privacy-by-design under the GDPR (Regulation EU 2016/679) and the California Consumer Privacy Act (CCPA). Users retain absolute, uncompromised sovereignty over their source data at all times.</p>
+
+            <h3>5. Contact Information</h3>
+            <p>If you have questions or concerns regarding this Privacy Policy or our architectural security boundaries, you may contact our open development team via our public <a href="https://github.com/MinorSibaja/dataforge-sql" target="_blank" rel="noopener noreferrer" style="color:var(--accent);">GitHub repository</a>.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" id="confirmPrivacyBtn" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Close</button>
+        </div>
+    </dialog>
+
+    <!-- Terms of Service Modal -->
+    <dialog id="termsModal" class="legal-modal">
+        <div class="modal-header">
+            <h2>Terms of Service</h2>
+            <button type="button" class="modal-close-btn" id="closeTermsBtn" aria-label="Close Terms of Service dialog">✕</button>
+        </div>
+        <div class="modal-body">
+            <p><strong>Effective Date:</strong> October 2026</p>
+            <p>By accessing or utilizing <strong>DataForge SQL</strong> (https://dataforgesql.com), you acknowledge and agree to comply with the following binding Terms of Service.</p>
+
+            <h3>1. Permitted Use and License</h3>
+            <p>DataForge SQL provides a browser-based, client-side utility designed to assist software engineers, database administrators, and technical users in formatting flat tabular files into relational SQL syntax. You are granted a free, non-exclusive license to utilize the service for personal, academic, and commercial data conversion purposes.</p>
+
+            <h3>2. "AS IS" Provision and Disclaimer of Warranties</h3>
+            <p>DataForge SQL IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS, WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR ACCURACY. While our compilation engine incorporates strict syntax heuristics for PostgreSQL, MySQL, Microsoft SQL Server, and SQLite, you acknowledge that automated type inference and batch generation are heuristic. <strong>You are solely responsible for verifying, validating, and testing any generated SQL script prior to executing it within any staging or production database environment.</strong></p>
+
+            <h3>3. Limitation of Liability</h3>
+            <p>UNDER NO CIRCUMSTANCES SHALL DATAFORGE SQL, ITS DEVELOPERS, CONTRIBUTORS, OR AFFILIATES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR EXEMPLARY DAMAGES, INCLUDING BUT NOT LIMITED TO DAMAGES FOR LOSS OF PROFITS, DATA CORRUPTION, SYSTEM DOWNTIME, UNRECOVERABLE DATABASE ROLLBACKS, OR BUSINESS INTERRUPTION ARISING FROM THE USE OR INABILITY TO USE THIS TOOL OR THE CODE IT PRODUCES.</p>
+
+            <h3>4. Third-Party Integrations and Referrals</h3>
+            <p>Our platform contextually displays non-intrusive links to external database platforms, hosting solutions, and cloud infrastructure providers (including DigitalOcean, Supabase, Neon, and PlanetScale). These external services are operated independently. We bear no responsibility for the policies, billing structures, availability, or operational outcomes of any third-party service provider.</p>
+
+            <h3>5. Changes to Terms</h3>
+            <p>We reserve the right to revise these Terms of Service periodically. Ongoing use of the application following the deployment of revisions constitutes formal acceptance of the amended terms.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" id="confirmTermsBtn" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Close</button>
+        </div>
+    </dialog>
 
     <!-- WEB WORKER SCRIPT -->
     <script type="text/worker" id="workerCode">
@@ -1197,6 +1376,71 @@
                     });
                 }
             });
+
+            // Modal Logic (Privacy Policy & Terms of Service)
+            const privacyModal = document.getElementById('privacyModal');
+            const termsModal = document.getElementById('termsModal');
+            const privacyLink = document.getElementById('privacyLink');
+            const termsLink = document.getElementById('termsLink');
+            const closePrivacyBtn = document.getElementById('closePrivacyBtn');
+            const closeTermsBtn = document.getElementById('closeTermsBtn');
+            const confirmPrivacyBtn = document.getElementById('confirmPrivacyBtn');
+            const confirmTermsBtn = document.getElementById('confirmTermsBtn');
+
+            function openModal(modal, hash) {
+                if (modal && typeof modal.showModal === 'function') {
+                    modal.showModal();
+                    history.replaceState(null, null, hash);
+                }
+            }
+
+            function closeModal(modal) {
+                if (modal && modal.open) {
+                    modal.close();
+                    history.replaceState(null, null, ' ');
+                }
+            }
+
+            privacyLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal(privacyModal, '#privacy');
+            });
+
+            termsLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal(termsModal, '#terms');
+            });
+
+            [closePrivacyBtn, confirmPrivacyBtn].forEach(btn => {
+                if (btn) btn.addEventListener('click', () => closeModal(privacyModal));
+            });
+
+            [closeTermsBtn, confirmTermsBtn].forEach(btn => {
+                if (btn) btn.addEventListener('click', () => closeModal(termsModal));
+            });
+
+            // Close modal when clicking outside the dialog window (on the backdrop)
+            [privacyModal, termsModal].forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    const rect = modal.getBoundingClientRect();
+                    const isInDialog = (
+                        rect.top <= e.clientY &&
+                        e.clientY <= rect.top + rect.height &&
+                        rect.left <= e.clientX &&
+                        e.clientX <= rect.left + rect.width
+                    );
+                    if (!isInDialog) {
+                        closeModal(modal);
+                    }
+                });
+            });
+
+            // Open modal automatically if URL hash is present on load
+            if (window.location.hash === '#privacy') {
+                openModal(privacyModal, '#privacy');
+            } else if (window.location.hash === '#terms') {
+                openModal(termsModal, '#terms');
+            }
         });
     </script>
 </body>
